@@ -1,0 +1,14 @@
+galaxy_info:
+  author: Abel Boldu
+  description: Role to install Docker Swarm, both manager(s) and worker(s).
+  company: Zinio
+  license: Apache
+  min_ansible_version: 2.2
+  platforms:
+   - name: EL
+     versions:
+     - 7
+
+  galaxy_tags: []
+
+dependencies: []

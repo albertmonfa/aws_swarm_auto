@@ -1,0 +1,48 @@
+- name: Install yum-utils
+  package:
+    name: yum-utils
+    state: present
+
+- name: Install EPEL
+  package:
+    name: epel-release
+    state: present
+
+- name: Install python-pip.
+  package:
+    name: python-pip
+    state: present
+
+- name: Install pip dependencies
+  pip:
+    name: "{{ item }}"
+    state: present
+  with_items:
+    - docker-py
+    - boto3
+    - pexpect
+
+
+- name: Add the YUM Docker repository.
+  yum_repository:
+    name: docker
+    description: Docker Repository
+    baseurl: "{{ docker_yum_repo }}"
+    gpgkey: "{{ docker_yum_gpgkey }}"
+    gpgcheck: yes
+
+- name: Install the Docker Engine.
+  package:
+    name: docker-ce
+    state: present
+
+- name: Install the Docker SELinux.
+  package:
+    name: docker-selinux
+    state: present
+
+- name: Enable the Docker daemon as a service and start it.
+  service:
+    name: docker
+    state: started
+    enabled: yes

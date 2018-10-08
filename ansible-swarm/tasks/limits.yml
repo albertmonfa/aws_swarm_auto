@@ -1,0 +1,5 @@
+---
+
+- name: Increase memlock limit
+  template: src=memlocks-limits.j2  dest=/etc/security/limits.d/10-memlock.conf
+  tags: memlock_limit

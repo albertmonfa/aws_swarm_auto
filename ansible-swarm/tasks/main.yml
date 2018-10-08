@@ -1,0 +1,9 @@
+---
+
+- include: packages.yml
+- include: sysctl.yml
+- include: limits.yml
+- include: rexray.yml
+
+- include: "{{ swarm_role }}.yml"
+  when: swarm_role is defined

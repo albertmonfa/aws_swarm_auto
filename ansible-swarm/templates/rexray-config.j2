@@ -1,0 +1,10 @@
+rexray:
+  storageDrivers:
+    ec2
+
+libstorage:
+  service: ec2
+
+aws:
+  region: {{ ansible_ec2_placement_region }}
+  rexrayTag: Z_name

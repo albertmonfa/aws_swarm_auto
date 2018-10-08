@@ -1,0 +1,9 @@
+---
+
+# Repos: stable, edge, test
+docker_repo: stable
+docker_yum_repo: "https://download.docker.com/linux/centos/7/$basearch/{{ docker_repo }}"
+docker_yum_gpgkey: "https://download.docker.com/linux/centos/gpg"
+rexray_version: 0.10.2
+token_bucket: com.zinio.operations.autoconf
+aws_region: us-west-2

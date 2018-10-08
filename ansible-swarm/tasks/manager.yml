@@ -1,0 +1,98 @@
+---
+
+- name: Get ec2 facts
+  ec2_facts:
+  tags: manager
+
+- name: Check if "Swarm Mode" is enabled.
+  shell: "docker info | egrep '^Swarm: ' | cut -d ' ' -f2"
+  changed_when: False
+  register: swarm_status
+  tags: manager
+
+- debug:
+    var:  swarm_status.stdout
+  tags: manager
+
+- name: Grab token from parameter store
+  set_fact:
+    current_manager_token: "{{ lookup('ssm', item.key, item.region ) }}"
+  with_items:
+    -  { key: "swarm_{{cluster_name}}_manager_token", region: "region={{ ansible_ec2_placement_region }}" }
+  tags: manager
+
+- name: Grab address from parameter store
+  set_fact:
+    current_manager_address: "{{ lookup('ssm', item.key, item.region ) }}"
+  with_items:
+    - { key: "swarm_{{cluster_name}}_manager_address", region: "region={{ ansible_ec2_placement_region }}" }
+  tags: manager
+
+- debug:
+    var:  current_manager_token
+  tags: manager
+
+- name: Init swarm
+  command: >
+    docker swarm init
+    --advertise-addr={{ swarm_address | default(ansible_default_ipv4.address) }}:2377
+  when:
+    - current_manager_token == ""
+    - swarm_status.stdout == "inactive"
+  register: init_swarm
+  tags: manager
+
+- name: retrieve swarm manager token
+  shell: docker swarm join-token -q manager
+  register: swarm_manager_token
+  changed_when: False
+  when: current_manager_token == ""
+  tags: manager
+
+- name: retrieve swarm worker token
+  shell: docker swarm join-token -q worker
+  register: swarm_worker_token
+  changed_when: False
+  when: current_manager_token == ""
+  tags: manager
+
+- name: Create manager token in parameter store
+  ssm_parameter_store:
+    name: "swarm_{{cluster_name}}_manager_token"
+    description: "Swarm Manager Token"
+    value: "{{ swarm_manager_token.stdout }}"
+    region: "{{ ansible_ec2_placement_region }}"
+    state: present
+  when: current_manager_token == ""
+  tags: manager
+
+- name: Create worker token in parameter store
+  ssm_parameter_store:
+    name: "swarm_{{cluster_name}}_worker_token"
+    description: "Swarm Worker Token"
+    value: "{{ swarm_worker_token.stdout }}"
+    region: "{{ ansible_ec2_placement_region }}"
+    state: present
+  when: current_manager_token == ""
+  tags: manager
+
+- name: Create manager address in parameter store
+  ssm_parameter_store:
+    name: "swarm_{{cluster_name}}_manager_address"
+    description: "Swarm Manager Address"
+    value: "{{ swarm_address | default(ansible_default_ipv4.address) }}"
+    region: "{{ ansible_ec2_placement_region }}"
+    state: present
+  when: current_manager_token == ""
+  tags: manager
+
+- name: Join if existing swarm
+  command: >
+    docker swarm join
+    --advertise-addr={{ swarm_address | default(ansible_default_ipv4.address) }}:2377
+    --token={{ current_manager_token }} {{ current_manager_address }}:2377
+  when:
+    - current_manager_token != ""
+    - swarm_status.stdout == "inactive"
+  register: join_swarm
+  tags: manager

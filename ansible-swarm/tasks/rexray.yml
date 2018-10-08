@@ -1,0 +1,38 @@
+- name: Get ec2 facts
+  ec2_facts:
+  tags: rexray
+
+- name: Installing rexray from script
+  shell: "curl -sSL https://dl.bintray.com/emccode/rexray/install | sh -s -- stable {{ rexray_version }}"
+  args:
+    creates: /etc/rexray/config.yml
+  tags: rexray
+
+- file:
+   path: /etc/rexray/
+   state: directory
+   mode: 0755
+  tags: rexray
+
+- template:
+    src: rexray-config.j2
+    dest: /etc/rexray/config.yml
+  notify:
+   - Restart rexray
+  tags: rexray
+
+- name: Enable and Starting REXray service
+  systemd:
+    name: rexray
+    enabled: yes
+    masked: no
+    state: started
+  tags: rexray
+
+- name: Installing Docker Plugin for EBS
+  expect:
+    command: docker plugin install rexray/ebs:latest
+    responses:
+      (?i)Plugin: "y"
+  tags: rexray
+  ignore_errors: True

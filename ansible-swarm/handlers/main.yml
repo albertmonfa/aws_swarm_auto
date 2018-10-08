@@ -1,0 +1,4 @@
+- name: Restart rexray
+  systemd:
+    name: rexray 
+    state: restarted
